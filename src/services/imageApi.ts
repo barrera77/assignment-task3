@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { getEnvironentVariable } from "../utils";
+import * as FileSystem from "expo-file-system";
 
 // You can use any hosting service of your preference.
 // In this case, we will use ImgBB API: https://api.imgbb.com/.
@@ -20,9 +21,31 @@ const imageApi = axios.create({
   params: { key: getEnvironentVariable("IMGBB_API_KEY") },
 });
 
-export const uploadImage = (imageBase64: string): Promise<AxiosResponse> => {
-  const data = new FormData();
-  data.append("image", imageBase64);
+export const uploadImage = async (
+  localUri: string
+): Promise<{
+  url: string;
+  size: number;
+  name: string;
+}> => {
+  // Read the local file as base64
+  const base64 = await FileSystem.readAsStringAsync(localUri, {
+    encoding: "base64",
+  });
 
-  return imageApi.post("/upload", data);
+  const form = new FormData();
+  form.append("image", base64);
+
+  const response: AxiosResponse = await imageApi.post("/upload", form);
+  const json = response.data;
+
+  if (!json?.data?.url) {
+    throw new Error("UPLOAD_FAILED");
+  }
+
+  return {
+    url: json.data.url as string,
+    size: Number(json.data.size),
+    name: json.data.image?.filename || "photo.jpg",
+  };
 };

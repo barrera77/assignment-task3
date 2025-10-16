@@ -13,39 +13,94 @@ import mapMarkerImg from "../images/map-marker.png";
 
 const apiBase = "http://10.0.0.33:3333";
 
-export default function EventsMap(props: StackScreenProps<any>) {
-  const { navigation } = props;
+interface Event {
+  id: string;
+  dateTime?: string;
+  description?: string;
+  imageUrl?: string;
+  name?: string;
+  organizerId?: string;
+  volunteersNeeded?: number;
+  volunteersIds?: string[];
+  position: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
+// 🧭 default markers for offline mode
+const defaultEvents: Event[] = [
+  {
+    id: "e3c95682-870f-4080-a0d7-ae8e23e2534f",
+    position: { latitude: 51.105761, longitude: -114.106943 },
+  },
+  {
+    id: "98301b22-2b76-44f1-a8da-8c86c56b0367",
+    position: { latitude: 51.04112, longitude: -114.069325 },
+  },
+  {
+    id: "d7b8ea73-ba2c-4fc3-9348-9814076124bd",
+    position: { latitude: 51.01222958257112, longitude: -114.11677222698927 },
+  },
+  {
+    id: "d1a6b9ea-877d-4711-b8d7-af8f1bce4d29",
+    position: { latitude: 51.010801915407036, longitude: -114.07823592424393 },
+  },
+];
+
+export default function EventsMap({ navigation }: StackScreenProps<any>) {
   const authenticationContext = useContext(AuthenticationContext);
   const mapViewRef = useRef<MapView>(null);
 
-  const [eventsList, setEventsList] = useState(events);
+  const [eventsList, setEventsList] = useState<Event[]>(defaultEvents);
   const [loading, setLoading] = useState(false);
 
-  const handleNavigateToCreateEvent = () => {};
+  const handleNavigateToCreateEvent = () => {
+    navigation.navigate("CreateEvent", {
+      onSaved: () => fetchEvents(),
+    });
+  };
 
-  const handleNavigateToEventDetails = (event: event) => {
+  const handleNavigateToEventDetails = (event: Event) => {
     navigation.navigate("EventDetails", { event });
   };
 
   const handleLogout = async () => {
-    AsyncStorage.multiRemove(["userInfo", "accessToken"]).then(() => {
-      authenticationContext?.setValue(undefined);
-      navigation.navigate("Login");
-    });
+    await AsyncStorage.multiRemove(["userInfo", "accessToken"]);
+    authenticationContext?.setValue(undefined);
+    navigation.navigate("Login");
+  };
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get(`${apiBase}/events`);
+      if (Array.isArray(data) && data.length > 0) {
+        setEventsList(data);
+        await AsyncStorage.setItem("eventsCache", JSON.stringify(data));
+      } else {
+        throw new Error("No events found");
+      }
+    } catch (err) {
+      console.log(
+        "⚠️ Server unreachable. Falling back to local cache or defaults."
+      );
+      try {
+        const cached = await AsyncStorage.getItem("eventsCache");
+        if (cached) {
+          setEventsList(JSON.parse(cached));
+        } else {
+          setEventsList(defaultEvents);
+        }
+      } catch {
+        setEventsList(defaultEvents);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const { data } = await axios.get(`${apiBase}/events`);
-        if (Array.isArray(data)) setEventsList(data);
-      } catch (err) {
-        console.log("⚠️ Falling back to local events, server not reachable.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchEvents();
   }, []);
 
@@ -63,23 +118,22 @@ export default function EventsMap(props: StackScreenProps<any>) {
         toolbarEnabled={false}
         moveOnMarkerPress={false}
         mapPadding={MapSettings.EDGE_PADDING}
-        onLayout={() =>
-          mapViewRef.current?.fitToCoordinates(
-            eventsList.map(({ position }) => ({
-              latitude: position.latitude,
-              longitude: position.longitude,
-            })),
-            { edgePadding: MapSettings.EDGE_PADDING }
-          )
-        }
+        onLayout={() => {
+          if (eventsList.length) {
+            mapViewRef.current?.fitToCoordinates(
+              eventsList.map((e) => ({
+                latitude: e.position.latitude,
+                longitude: e.position.longitude,
+              })),
+              { edgePadding: MapSettings.EDGE_PADDING }
+            );
+          }
+        }}
       >
         {eventsList.map((event) => (
           <Marker
             key={event.id}
-            coordinate={{
-              latitude: event.position.latitude,
-              longitude: event.position.longitude,
-            }}
+            coordinate={event.position}
             onPress={() => handleNavigateToEventDetails(event)}
           >
             <Image
@@ -163,37 +217,3 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
-
-interface event {
-  id: string;
-  dateTime?: string;
-  description?: string;
-  imageUrl?: string;
-  name?: string;
-  organizerId?: string;
-  volunteersNeeded?: number;
-  volunteersIds?: string[];
-  position: {
-    latitude: number;
-    longitude: number;
-  };
-}
-
-const events: event[] = [
-  {
-    id: "e3c95682-870f-4080-a0d7-ae8e23e2534f",
-    position: { latitude: 51.105761, longitude: -114.106943 },
-  },
-  {
-    id: "98301b22-2b76-44f1-a8da-8c86c56b0367",
-    position: { latitude: 51.04112, longitude: -114.069325 },
-  },
-  {
-    id: "d7b8ea73-ba2c-4fc3-9348-9814076124bd",
-    position: { latitude: 51.01222958257112, longitude: -114.11677222698927 },
-  },
-  {
-    id: "d1a6b9ea-877d-4711-b8d7-af8f1bce4d29",
-    position: { latitude: 51.010801915407036, longitude: -114.07823592424393 },
-  },
-];
