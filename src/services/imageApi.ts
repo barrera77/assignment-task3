@@ -26,7 +26,6 @@ export const uploadImage = async (
   size: number;
   name: string;
 }> => {
-  // The base64 string is now passed in directly from the caller
   const form = new FormData();
   form.append("image", base64String);
 

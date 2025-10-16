@@ -90,7 +90,6 @@ export default function CreateEvent({ route, navigation }: Props) {
       setBusy(true);
       let uploadedUrl = image?.url;
 
-      // Use the new File API for base64 conversion
       if (uploadedUrl && uploadedUrl.startsWith("file://")) {
         const file = new FileSystem.File(uploadedUrl);
         const base64 = await file.base64();

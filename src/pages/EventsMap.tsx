@@ -28,7 +28,6 @@ interface Event {
   };
 }
 
-// 🧭 default markers for offline mode
 const defaultEvents: Event[] = [
   {
     id: "e3c95682-870f-4080-a0d7-ae8e23e2534f",
@@ -83,7 +82,7 @@ export default function EventsMap({ navigation }: StackScreenProps<any>) {
       }
     } catch (err) {
       console.log(
-        "⚠️ Server unreachable. Falling back to local cache or defaults."
+        "Server unreachable. Falling back to local cache or defaults."
       );
       try {
         const cached = await AsyncStorage.getItem("eventsCache");
