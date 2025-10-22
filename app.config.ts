@@ -12,9 +12,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     resizeMode: "cover",
     backgroundColor: "#031A62",
   },
-  updates: {
-    fallbackToCacheTimeout: 0,
-  },
   assetBundlePatterns: ["**/*"],
 
   ios: {
@@ -37,6 +34,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     "expo-font",
   ],
+
+  updates: {
+    url: "https://u.expo.dev/31e7490d-c440-4e35-9ba0-ee539df3bb32",
+    fallbackToCacheTimeout: 0,
+  },
+  runtimeVersion: {
+    policy: "appVersion",
+  },
 
   extra: {
     eas: {
