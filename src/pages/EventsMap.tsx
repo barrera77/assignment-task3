@@ -2,14 +2,29 @@ import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StackScreenProps } from "@react-navigation/stack";
 import React, { useContext, useRef, useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View, Platform } from "react-native";
 import { RectButton } from "react-native-gesture-handler";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import axios from "axios";
 import customMapStyle from "../../map-style.json";
 import * as MapSettings from "../constants/MapSettings";
 import { AuthenticationContext } from "../context/AuthenticationContext";
 import mapMarkerImg from "../images/map-marker.png";
+
+// ✅ Safe dynamic import to prevent Expo web build crash
+let MapView: any;
+let Marker: any;
+let PROVIDER_GOOGLE: any;
+
+if (Platform.OS !== "web") {
+  const Maps = require("react-native-maps");
+  MapView = Maps.default;
+  Marker = Maps.Marker;
+  PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
+} else {
+  MapView = () => null;
+  Marker = () => null;
+  PROVIDER_GOOGLE = null;
+}
 
 const apiBase = "http://10.0.0.33:3333";
 
@@ -49,7 +64,7 @@ const defaultEvents: Event[] = [
 
 export default function EventsMap({ navigation }: StackScreenProps<any>) {
   const authenticationContext = useContext(AuthenticationContext);
-  const mapViewRef = useRef<MapView>(null);
+  const mapViewRef = useRef<any>(null);
 
   const [eventsList, setEventsList] = useState<Event[]>(defaultEvents);
   const [loading, setLoading] = useState(false);
@@ -118,8 +133,8 @@ export default function EventsMap({ navigation }: StackScreenProps<any>) {
         moveOnMarkerPress={false}
         mapPadding={MapSettings.EDGE_PADDING}
         onLayout={() => {
-          if (eventsList.length) {
-            mapViewRef.current?.fitToCoordinates(
+          if (eventsList.length && mapViewRef.current?.fitToCoordinates) {
+            mapViewRef.current.fitToCoordinates(
               eventsList.map((e) => ({
                 latitude: e.position.latitude,
                 longitude: e.position.longitude,
