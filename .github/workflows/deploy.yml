@@ -1,4 +1,4 @@
-name: 🚀 Deploy Volunteam App (feature/manage-data-flows)
+name: Deploy Volunteam App (feature/manage-data-flows)
 
 on:
   workflow_dispatch:
