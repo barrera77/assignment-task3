@@ -1,0 +1,39 @@
+name: Deploy Volunteam App (feature/manage-data-flows)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "feature/manage-data-flows"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npx expo install
+
+      - name: Log in to Expo
+        run: npx expo login -u "${{ secrets.EXPO_USERNAME }}" -p "${{ secrets.EXPO_PASSWORD }}"
+
+      - name: Publish to Expo (production)
+        run: npx expo publish --non-interactive --release-channel production
+
+      - name: Finished
+        run: echo "Volunteam App deployed successfully from feature/manage-data-flows."
