@@ -39,9 +39,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
 
   extra: {
-    eas: {
-      projectId: "954f3b8e-1155-4f8f-8601-a2b3126da39e",
-    },
     IMGBB_API_KEY: process.env.IMGBB_API_KEY,
   },
 });
