@@ -24,20 +24,15 @@ jobs:
           node-version: 20.19.4
           cache: "npm"
 
-      - name: Install dependencies
+      - name: Install dependencies (force + upgrade types)
         run: |
           rm -rf node_modules package-lock.json
           npm install --force
-          npx expo install --fix
-
-      - name: Log in to Expo
-        env:
-          EXPO_USERNAME: ${{ secrets.EXPO_USERNAME }}
-          EXPO_PASSWORD: ${{ secrets.EXPO_PASSWORD }}
-        run: npx expo login -u "$EXPO_USERNAME" -p "$EXPO_PASSWORD"
+          npm install @types/react@19.1.10 @types/react-dom@19.1.7 --force
+          echo "✅ Dependencies installed with forced resolution"
 
       - name: Publish to Expo (production)
-        run: npx expo publish --non-interactive --release-channel production
+        run: npx expo publish --non-interactive --release-channel production --no-wait
 
       - name: Finished
         run: echo "✅ Volunteam App deployed successfully from branch '${{ github.event.inputs.branch }}'."
