@@ -31,8 +31,10 @@ jobs:
           npm install @types/react@19.1.10 @types/react-dom@19.1.7 --force
           echo "✅ Dependencies installed with forced resolution"
 
-      - name: Publish to Expo (production)
-        run: npx expo publish --non-interactive --release-channel production --no-wait
+      - name: Publish to Expo via EAS Update
+        run: npx eas update --channel production --message "Deploy from branch ${{ github.event.inputs.branch }}"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Finished
         run: echo "✅ Volunteam App deployed successfully from branch '${{ github.event.inputs.branch }}'."
