@@ -1,0 +1,13 @@
+{
+  "cli": {
+    "version": ">= 3.13.1"
+  },
+  "build": {
+    "production": {
+      "releaseChannel": "production"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
