@@ -1,8 +1,12 @@
-name: Deploy Volunteam App to Expo
+name: 🚀 Deploy Volunteam App (feature/manage-data-flows)
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "feature/manage-data-flows"
 
 jobs:
   build-and-deploy:
@@ -11,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -30,4 +36,4 @@ jobs:
         run: npx expo publish --non-interactive --release-channel production
 
       - name: Finished
-        run: echo "Volunteam published to Expo successfully."
+        run: echo "Volunteam App deployed successfully from feature/manage-data-flows."
