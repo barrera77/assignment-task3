@@ -1,0 +1,174 @@
+name: Build and Release Volunteam App
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build from"
+        required: true
+        default: "main"
+      version:
+        description: "Release version (e.g., v1.0.0)"
+        required: true
+        default: "v1.0.0"
+      platform:
+        description: "Platform to build"
+        required: true
+        type: choice
+        options:
+          - android
+          - ios
+          - all
+        default: "android"
+      profile:
+        description: "Build profile"
+        required: true
+        type: choice
+        options:
+          - preview
+          - production
+        default: "preview"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.4
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install --force
+          npm install @types/react@19.1.10 @types/react-dom@19.1.7 --force
+          echo "Dependencies installed"
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build app with EAS
+        id: build
+        run: |
+          echo "Starting EAS build for ${{ github.event.inputs.platform }}..."
+
+          # Start the build and capture output
+          eas build --platform ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --non-interactive --no-wait > build_output.txt
+
+          # Extract build ID from output
+          BUILD_ID=$(grep -oP 'Build ID: \K[a-f0-9-]+' build_output.txt | head -1)
+          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+          echo "Build started with ID: $BUILD_ID"
+
+          # Wait for build to complete and get the download URL
+          echo "Waiting for build to complete..."
+          eas build:view $BUILD_ID --json > build_details.json
+
+          # Poll until build is complete (max 30 minutes)
+          for i in {1..60}; do
+            sleep 30
+            eas build:view $BUILD_ID --json > build_details.json
+            STATUS=$(jq -r '.status' build_details.json)
+            echo "Build status: $STATUS (check $i/60)"
+            
+            if [ "$STATUS" = "finished" ]; then
+              echo "Build completed successfully!"
+              DOWNLOAD_URL=$(jq -r '.artifacts.buildUrl' build_details.json)
+              echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+              echo "Download URL: $DOWNLOAD_URL"
+              break
+            elif [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+              echo "Build failed with status: $STATUS"
+              exit 1
+            fi
+          done
+
+      - name: Download build artifact
+        if: success()
+        run: |
+          echo "Downloading build from: ${{ steps.build.outputs.download_url }}"
+
+          # Determine file extension based on platform
+          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
+            EXT="apk"
+          elif [ "${{ github.event.inputs.platform }}" = "ios" ]; then
+            EXT="ipa"
+          else
+            EXT="zip"
+          fi
+
+          # Download the build
+          curl -L "${{ steps.build.outputs.download_url }}" -o "volunteam-app.$EXT"
+
+          echo "Build downloaded as volunteam-app.$EXT"
+          ls -lh volunteam-app.$EXT
+
+      - name: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: "Volunteam App ${{ github.event.inputs.version }}"
+          body: |
+            ## Volunteam App Release
+
+            **Branch:** `${{ github.event.inputs.branch }}`
+            **Platform:** `${{ github.event.inputs.platform }}`
+            **Build Profile:** `${{ github.event.inputs.profile }}`
+            **Build Date:** ${{ github.event.repository.updated_at }}
+
+            ### Download Options
+
+            - **Direct Download:** Use the attached file below
+            - **EAS Build URL:** ${{ steps.build.outputs.download_url }}
+
+            ### Installation Instructions
+
+            #### Android (APK):
+            1. Download the `.apk` file
+            2. Enable "Install from Unknown Sources" in your device settings
+            3. Open the APK file and follow installation prompts
+
+            #### iOS (IPA):
+            1. Requires TestFlight or enterprise distribution
+            2. Contact the administrator for installation instructions
+
+            ### Changelog
+
+            - Initial release from branch `${{ github.event.inputs.branch }}`
+            - Includes all features up to commit ${{ github.sha }}
+
+            ---
+
+            Built with using EAS Build
+          files: |
+            volunteam-app.*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "Build and Release Complete!"
+          echo ""
+          echo "Build ID: ${{ steps.build.outputs.build_id }}"
+          echo "Download URL: ${{ steps.build.outputs.download_url }}"
+          echo "Release Version: ${{ github.event.inputs.version }}"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ github.event.inputs.version }}"
+          echo ""
+          echo "Your assignment submission links:"
+          echo "   - GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ github.event.inputs.version }}"
+          echo "   - Build Download: ${{ steps.build.outputs.download_url }}"
