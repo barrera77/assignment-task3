@@ -39,7 +39,7 @@ jobs:
       - name: Publish to Expo via EAS Update
         run: |
           export CI=1
-          npx eas update --channel ${{ github.event.inputs.channel }} --platform ios,android --message "Deploy from branch ${{ github.event.inputs.branch }}"
+          npx eas update --channel production --platform ios,android --message "Deploy from branch feature/manage-data-flows"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
