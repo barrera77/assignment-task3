@@ -10,7 +10,6 @@ import * as MapSettings from "../constants/MapSettings";
 import { AuthenticationContext } from "../context/AuthenticationContext";
 import mapMarkerImg from "../images/map-marker.png";
 
-// ✅ Safe dynamic import to prevent Expo web build crash
 let MapView: any;
 let Marker: any;
 let PROVIDER_GOOGLE: any;

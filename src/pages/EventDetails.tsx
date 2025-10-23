@@ -8,8 +8,9 @@ import {
   Linking,
   ScrollView,
   Alert,
+  Platform,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+//import MapView, { Marker } from "react-native-maps";
 import { Feather } from "@expo/vector-icons";
 import { StackScreenProps } from "@react-navigation/stack";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,6 +18,35 @@ import { AuthenticationContext } from "../context/AuthenticationContext";
 import { User } from "../types/User";
 import mapMarkerImg from "../images/map-marker.png";
 import axios from "axios";
+
+let MapView: any;
+let Marker: any;
+
+if (Platform.OS !== "web") {
+  const Maps = require("react-native-maps");
+  MapView = Maps.default;
+  Marker = Maps.Marker;
+} else {
+  // Provide a web fallback component
+  MapView = ({ children, style, ...props }: any) => (
+    <View
+      style={[
+        style,
+        {
+          backgroundColor: "#E6F4FF",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+      ]}
+    >
+      <Text style={{ color: "#8fa7b3", fontFamily: "Nunito_400Regular" }}>
+        Map view not available on web
+      </Text>
+      {children}
+    </View>
+  );
+  Marker = () => null;
+}
 
 const apiBase = "http://10.0.0.33:3333";
 
