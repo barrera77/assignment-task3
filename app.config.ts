@@ -13,15 +13,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: "#031A62",
   },
   assetBundlePatterns: ["**/*"],
-
   ios: {
     supportsTablet: true,
+    bundleIdentifier: "com.volunteam.app",
+    buildNumber: "1.0.0",
   },
-
+  android: {
+    package: "com.volunteam.app",
+    versionCode: 1,
+    adaptiveIcon: {
+      foregroundImage: "./assets/icon.png",
+      backgroundColor: "#031A62",
+    },
+  },
   web: {
     favicon: "./assets/favicon.png",
   },
-
   plugins: [
     [
       "expo-image-picker",
@@ -34,7 +41,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     "expo-font",
   ],
-
   updates: {
     url: "https://u.expo.dev/31e7490d-c440-4e35-9ba0-ee539df3bb32",
     fallbackToCacheTimeout: 0,
@@ -42,7 +48,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   runtimeVersion: {
     policy: "appVersion",
   },
-
   extra: {
     eas: {
       projectId: "31e7490d-c440-4e35-9ba0-ee539df3bb32",
