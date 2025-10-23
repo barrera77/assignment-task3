@@ -66,17 +66,17 @@ jobs:
             --platform ${{ github.event.inputs.platform }} \
             --profile ${{ github.event.inputs.profile }} \
             --non-interactive \
-            --wait
+            --wait \
+            --json > build_result.json
 
-          # Get the latest build info
-          BUILD_INFO=$(eas build:list --platform ${{ github.event.inputs.platform }} --limit 1 --json)
-          BUILD_ID=$(echo $BUILD_INFO | jq -r '.[0].id')
-          DOWNLOAD_URL=$(echo $BUILD_INFO | jq -r '.[0].artifacts.buildUrl')
+          # Extract build info from the result
+          BUILD_ID=$(cat build_result.json | jq -r '.[0].id')
+          DOWNLOAD_URL=$(cat build_result.json | jq -r '.[0].artifacts.buildUrl')
 
           echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
           echo "download_url=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
 
-          echo "Build completed!"
+          echo "✅ Build completed!"
           echo "Build ID: $BUILD_ID"
           echo "Download URL: $DOWNLOAD_URL"
         env:
